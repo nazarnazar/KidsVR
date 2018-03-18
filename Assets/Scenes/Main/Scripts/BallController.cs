@@ -5,7 +5,6 @@ using UnityEngine;
 
 public class BallController : MonoBehaviour 
 {
-    private Vector3 startingPosition;
     private new Renderer renderer;
 
     public Material inactiveMaterial;
@@ -14,67 +13,69 @@ public class BallController : MonoBehaviour
     [SerializeField] private float _liftHeight;
     [SerializeField] private float _liftSpeed;
     [SerializeField] private float _catchSpeed;
+    [SerializeField] private RGB _color;
 
     private bool _selected = false;
     private bool _gazedAt = false;
     private Coroutine _liftRoutine = null;
     private Coroutine _movingRoutine = null;
+    private float _ballXLimit = 40.0f;
 
     void Start()
     {
-        startingPosition = transform.localPosition;
         renderer = GetComponent<Renderer>();
         SetGazedAt(false);
     }
 
     public void SetGazedAt(bool gazedAt)
     {
-        Debug.Log("SphereController: SetGazedAt");
         _gazedAt = gazedAt;
         if (_selected == false && inactiveMaterial != null && gazedAtMaterial != null)
         {
             renderer.material = gazedAt ? gazedAtMaterial : inactiveMaterial;
-            return;
         }
     }
 
     public void Select()
     {
-        Debug.Log("Select");
         _selected = true;
-        gameObject.GetComponent<Rigidbody>().useGravity = false;
+        gameObject.GetComponent<Rigidbody>().isKinematic = true;
         _liftRoutine = StartCoroutine(Lift(BindToCamera));
     }
 
 
     public void Diselect()
     {
-        Debug.Log("Diselect");
+        _selected = false;
         if (_liftRoutine != null)
+        {
             StopCoroutine(_liftRoutine);
+            _liftRoutine = null;
+        }
         if (_movingRoutine != null)
+        {
             StopCoroutine(_movingRoutine);
-        gameObject.GetComponent<Rigidbody>().useGravity = true;
+            _movingRoutine = null;
+        }
+        gameObject.GetComponent<Rigidbody>().isKinematic = false;
+        SetGazedAt(_gazedAt);
     }
 
-    private void OnCollisionEnter(Collision collision)
+    public RGB GetColor()
     {
-        if (collision.gameObject.tag == "Floor" && _selected == true)
-        {
-            _selected = false;
-            SetGazedAt(_gazedAt); 
-        }
+        return _color;
     }
 
     private IEnumerator Lift(Action callback)
     {
         Vector3 startPosition = transform.position;
         Vector3 finishPosition = new Vector3(startPosition.x, _liftHeight, startPosition.z);
+        float yDistance = Mathf.Abs(finishPosition.y - startPosition.y);
         float t = 0.0f;
         while (t < 1.0f)
         {
             transform.position = Vector3.Lerp(startPosition, finishPosition, t);
-            t += Time.deltaTime * _liftSpeed;
+            t += Time.deltaTime * _liftSpeed / yDistance;
             yield return null;
         }
         _liftRoutine = null;
@@ -102,7 +103,7 @@ public class BallController : MonoBehaviour
                 float increment = (_catchSpeed * Time.deltaTime > positionDiff) ? positionDiff : _catchSpeed * Time.deltaTime;
                 if (targetBallPosition < transform.position.x)
                     increment *= -1;
-                transform.position = new Vector3(transform.position.x + increment,
+                transform.position = new Vector3(Mathf.Clamp(transform.position.x + increment, -_ballXLimit, _ballXLimit),
                                                  transform.position.y,
                                                  transform.position.z);
             }

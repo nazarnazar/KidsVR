@@ -6,15 +6,28 @@ public class ButtonController : MonoBehaviour
 {
     [SerializeField] private float _pressedHeight;
     [SerializeField] private float _pressingSpeed;
+    [SerializeField] private RGB _color;
 
     private bool _pressed = false;
+    private GameController _gc;
+
+    private void Start()
+    {
+        _gc = GameObject.FindGameObjectWithTag("GC").GetComponent<GameController>();
+    }
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (collision.gameObject.tag == "Ball" && _pressed == false)
+        GameObject other = collision.gameObject;
+        if (other.tag == "Ball" && _pressed == false)
         {
-            _pressed = true;
-            StartCoroutine(Press());    
+            RGB ballColor = other.GetComponent<BallController>().GetColor();
+            if (ballColor == _color)
+            {
+                _pressed = true;
+                _gc.PlusOnePoint();
+                StartCoroutine(Press());
+            }
         }
     }
 
@@ -30,7 +43,5 @@ public class ButtonController : MonoBehaviour
             t += Time.deltaTime * _pressingSpeed;
             yield return null;
         }
-
-        Debug.Log("CONGRATULATIONS!!!");
     }
 }

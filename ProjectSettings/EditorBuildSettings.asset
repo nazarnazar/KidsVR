@@ -6,5 +6,5 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/GoogleVR/Demos/Scenes/Main.unity
+    path: Assets/Scenes/Main/Main.unity
     guid: 2f3c19d167cce4a37b804e57c69ef216
